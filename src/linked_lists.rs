@@ -10,6 +10,13 @@ pub struct LinkedList<T> {
     pub head: Option<Box<Node<T>>>,
     pub length: usize,
 }
+// Errors enum
+#[derive(Debug)]
+pub enum LinkedListError {
+    IndexOutOfBounds,
+    EmptyList,
+    InvalidIndex,
+}
 
 impl<T> LinkedList<T> {
     // Create a new empty linked list
@@ -47,9 +54,9 @@ impl<T> LinkedList<T> {
         self.length += 1;
     }
     // insert at index
-    pub fn insert_at_index(&mut self, index: usize, value: T) -> Result<(), &'static str> {
+    pub fn insert_at_index(&mut self, index: usize, value: T) -> Result<(), LinkedListError> {
         if index > self.length {
-            return Err("Index out of bounds");
+            return Err(LinkedListError::IndexOutOfBounds);
         }
         if index == 0 {
             self.insert_at_head(value);
@@ -70,7 +77,7 @@ impl<T> LinkedList<T> {
             self.length += 1;
             Ok(())
         } else {
-            Err("Index out of bounds")
+            Err(LinkedListError::InvalidIndex)
         }
     }
     
@@ -84,5 +91,49 @@ impl<T> LinkedList<T> {
             None
         }
     }
-    
+
+    //remove from tail
+    pub fn remove_from_tail(&mut self) -> Option<T> {
+        if self.head.is_none() {
+            return None;
+        }
+        if self.head.as_ref().unwrap().next.is_none() {
+            return self.remove_from_head();
+        }
+        let mut current = self.head.as_mut().unwrap();  
+        while let Some(ref next) = current.next {  
+            if next.next.is_none() {  
+                let tail = current.next.take().unwrap();  
+                self.length -= 1;
+                return Some(tail.value);  
+            }
+            current = current.next.as_mut().unwrap();  
+        }
+        None  
+    }
+    // remove from index 
+    pub fn remove_from_index(&mut self, index: usize) -> Result<T, LinkedListError> {
+        if index >= self.length {
+            return Err(LinkedListError::IndexOutOfBounds);
+        }
+        if index == 0 {
+            return self.remove_from_head().ok_or(LinkedListError::EmptyList);
+        }
+        let mut current = self.head.as_mut();
+        for _ in 0..index - 1 {
+            if let Some(node) = current {
+                current = node.next.as_mut();
+            }
+        }
+        if let Some(node) = current {
+            if let Some(mut to_remove) = node.next.take() {
+                node.next = to_remove.next.take();
+                self.length -= 1;
+                return Ok(to_remove.value);
+            }
+        }
+        Err(LinkedListError::InvalidIndex)
+
+    }
+    // reverse singly-linked list
 }
